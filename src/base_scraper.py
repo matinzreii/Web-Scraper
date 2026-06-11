@@ -58,3 +58,40 @@ class BaseScraper(ABC):
             List of dictionaries containing product data.
         """
         pass
+
+    def scrape(self) -> List[Dict[str, Any]]:
+        """
+        Execute the complete scraping workflow.
+
+        Returns:
+            List of product dictionaries.
+        """
+        logger.info(f"Starting scrape for competitor: {self.competitor_name}")
+
+        try:
+            html = self.fetch_page()
+            products = self.extract_products(html)
+            logger.info(f"Successfully scraped {len(products)} products from {self.competitor_name}")
+            return products
+
+        except Exception as e:
+            logger.error(f"Failed to scrape {self.competitor_name}: {e}", exc_info=True)
+            return []
+
+        finally:
+            # Respect robots.txt: delay between requests
+            time.sleep(REQUEST_DELAY)
+
+    def _normalize_product(self, product: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Normalize product data by adding metadata.
+
+        Args:
+            product: Raw product dictionary.
+
+        Returns:
+            Normalized product dictionary with added fields.
+        """
+        product["competitor_name"] = self.competitor_name
+        product["scrape_timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
+        return product
